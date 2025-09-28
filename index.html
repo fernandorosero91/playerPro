@@ -922,7 +922,7 @@
                     if (isPlayingYouTube) {
                         pauseYouTubeVideo();
                     } else {
-                        if (currentYouTubeVideoId === videoId && youtubePlayer) {
+                        if (currentYouTubeVideoId === videoId && youtubePlayer && typeof youtubePlayer.playVideo === 'function') {
                             // Reanudar el mismo video
                             youtubePlayer.playVideo();
                         } else {
@@ -1546,7 +1546,9 @@
             
             // Configurar volumen inicial
             try {
-                youtubePlayer.setVolume(80);
+                if (typeof youtubePlayer.setVolume === 'function') {
+                    youtubePlayer.setVolume(80);
+                }
             } catch (error) {
                 console.error('Error setting YouTube volume:', error);
             }
@@ -1658,21 +1660,25 @@
                 }
 
                 // Cargar y reproducir video de YouTube
-                youtubePlayer.loadVideoById({
-                    videoId: videoId,
-                    startSeconds: 0
-                });
+                if (typeof youtubePlayer.loadVideoById === 'function') {
+                    youtubePlayer.loadVideoById({
+                        videoId: videoId,
+                        startSeconds: 0
+                    });
 
-                // Actualizar estados
-                isPlayingYouTube = true;
-                isPlaying = true;
-                updatePlayPauseIcon();
+                    // Actualizar estados
+                    isPlayingYouTube = true;
+                    isPlaying = true;
+                    updatePlayPauseIcon();
 
-                // Pequeño delay para asegurar que el video se cargue
-                setTimeout(() => {
-                    youtubePlayer.playVideo();
-                    console.log('YouTube video play command sent');
-                }, 500);
+                    // Pequeño delay para asegurar que el video se cargue
+                    setTimeout(() => {
+                        if (typeof youtubePlayer.playVideo === 'function') {
+                            youtubePlayer.playVideo();
+                            console.log('YouTube video play command sent');
+                        }
+                    }, 500);
+                }
 
                 return true;
             } catch (error) {
@@ -1683,7 +1689,7 @@
         }
 
         function pauseYouTubeVideo() {
-            if (youtubePlayer && isPlayingYouTube) {
+            if (youtubePlayer && typeof youtubePlayer.pauseVideo === 'function' && isPlayingYouTube) {
                 youtubePlayer.pauseVideo();
                 isPlayingYouTube = false;
                 isPlaying = false;
@@ -1692,7 +1698,7 @@
         }
 
         function stopYouTubeVideo() {
-            if (youtubePlayer) {
+            if (youtubePlayer && typeof youtubePlayer.stopVideo === 'function') {
                 youtubePlayer.stopVideo();
                 isPlayingYouTube = false;
                 currentYouTubeVideoId = null;
@@ -1707,7 +1713,7 @@
             stopYouTubeProgressUpdate(); // Limpiar cualquier intervalo anterior
             
             youtubeProgressInterval = setInterval(() => {
-                if (youtubePlayer && isPlayingYouTube) {
+                if (youtubePlayer && isPlayingYouTube && typeof youtubePlayer.getCurrentTime === 'function' && typeof youtubePlayer.getDuration === 'function') {
                     try {
                         const currentTime = youtubePlayer.getCurrentTime();
                         const duration = youtubePlayer.getDuration();
