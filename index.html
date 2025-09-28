@@ -739,15 +739,33 @@
         });
 
         document.getElementById('prevBtn').addEventListener('click', async () => {
+            const wasPlaying = isPlaying;
             await fetch(`${API_BASE}/prev`, { method: 'POST' });
-            loadCurrentTrack();
+            await loadCurrentTrack();
             loadPlaylist();
+            
+            // Si estaba reproduciendo, continuar reproduciendo la nueva canción
+            if (wasPlaying && currentTrack) {
+                audio.load();
+                audio.play();
+                isPlaying = true;
+                updatePlayPauseIcon();
+            }
         });
 
         document.getElementById('nextBtn').addEventListener('click', async () => {
+            const wasPlaying = isPlaying;
             await fetch(`${API_BASE}/next`, { method: 'POST' });
-            loadCurrentTrack();
+            await loadCurrentTrack();
             loadPlaylist();
+            
+            // Si estaba reproduciendo, continuar reproduciendo la nueva canción
+            if (wasPlaying && currentTrack) {
+                audio.load();
+                audio.play();
+                isPlaying = true;
+                updatePlayPauseIcon();
+            }
         });
 
         document.getElementById('playPauseBtn').addEventListener('click', () => {
@@ -864,7 +882,14 @@
                 // Hide empty state during search
                 emptyPlaylist.classList.add('hidden');
 
-                tracks.forEach((track, index) => {
+                // Necesitamos obtener la playlist completa para encontrar los índices reales
+                const allTracksRes = await fetch(`${API_BASE}/playlist`);
+                const allTracks = await allTracksRes.json();
+
+                tracks.forEach((track, searchIndex) => {
+                    // Encontrar el índice real de esta canción en la playlist completa
+                    const realIndex = allTracks.findIndex(t => t.path === track.path);
+                    
                     const trackInfo = extractTrackInfo(track.title);
                     const div = document.createElement('div');
                     div.className = 'track-item rounded-2xl p-4 flex items-center gap-3 cursor-pointer transition-all relative';
@@ -877,6 +902,17 @@
                             <p class="text-white/60 text-xs">${trackInfo.artist} • Resultado de Búsqueda</p>
                         </div>
                     `;
+                    
+                    // Agregar event listener para reproducir la canción
+                    div.addEventListener('click', () => {
+                        if (realIndex !== -1) {
+                            playTrack(realIndex);
+                            // Limpiar búsqueda y mostrar playlist completa
+                            document.getElementById('searchInput').value = '';
+                            loadPlaylist();
+                        }
+                    });
+                    
                     playlistEl.appendChild(div);
                 });
             } catch (error) {
@@ -916,9 +952,16 @@
         // Audio events
         audio.addEventListener('ended', async () => {
             await fetch(`${API_BASE}/next`, { method: 'POST' });
-            loadCurrentTrack();
+            await loadCurrentTrack();
             loadPlaylist();
-            audio.play();
+            
+            // Reproducir automáticamente la siguiente canción
+            if (currentTrack) {
+                audio.load();
+                audio.play();
+                isPlaying = true;
+                updatePlayPauseIcon();
+            }
         });
 
         audio.addEventListener('play', () => {
