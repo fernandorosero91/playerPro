@@ -245,6 +245,48 @@
             box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
         }
 
+        .youtube-result-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .youtube-result-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(74, 144, 226, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .youtube-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .youtube-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .youtube-btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .youtube-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .youtube-btn:active {
+            transform: translateY(0);
+        }
+
         .scrollbar-custom {
             scrollbar-width: thin;
             scrollbar-color: rgba(74, 144, 226, 0.5) transparent;
@@ -475,11 +517,61 @@
 
                     <!-- Add Songs -->
                     <button id="addSongsBtn"
-                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-2xl py-3 mb-6 text-white font-medium transition-all flex items-center justify-center gap-2 shadow-lg">
+                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-2xl py-3 mb-3 text-white font-medium transition-all flex items-center justify-center gap-2 shadow-lg">
                         <i class="fas fa-plus"></i>
                         Añadir Canciones
                     </button>
                     <input type="file" id="fileInput" multiple accept="audio/*" class="hidden">
+
+                    <!-- YouTube Integration -->
+                    <button id="youtubeBtn"
+                        class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-2xl py-3 mb-6 text-white font-medium transition-all flex items-center justify-center gap-2 shadow-lg">
+                        <i class="fab fa-youtube"></i>
+                        Buscar en YouTube
+                    </button>
+
+                    <!-- YouTube Search Modal -->
+                    <div id="youtubeModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                        <div class="glass-morphism rounded-3xl p-6 w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-white/20">
+                            <!-- Header -->
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-2xl font-bold text-white flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
+                                        <i class="fab fa-youtube text-white text-lg"></i>
+                                    </div>
+                                    Buscar en YouTube
+                                </h3>
+                                <button id="closeYoutubeModal" class="w-10 h-10 rounded-xl glass-morphism flex items-center justify-center text-white/70 hover:text-white transition-all hover:bg-white/10">
+                                    <i class="fas fa-times text-lg"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Search Input -->
+                            <div class="relative mb-4">
+                                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50"></i>
+                                <input type="text" id="youtubeSearchInput" placeholder="Buscar música en YouTube..."
+                                       class="search-input w-full pl-12 pr-4 py-4 rounded-2xl text-white placeholder-white/50 focus:outline-none text-lg">
+                            </div>
+                            
+                            <!-- URL Input -->
+                            <div class="relative mb-6">
+                                <i class="fab fa-youtube absolute left-4 top-1/2 transform -translate-y-1/2 text-red-500"></i>
+                                <input type="text" id="youtubeUrlInput" placeholder="O pega una URL de YouTube..."
+                                       class="search-input w-full pl-12 pr-24 py-4 rounded-2xl text-white placeholder-white/50 focus:outline-none">
+                                <button id="addYoutubeUrl" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-white text-sm font-medium transition-all hover:scale-105 shadow-lg">
+                                    <i class="fas fa-plus mr-1"></i>Añadir
+                                </button>
+                            </div>
+                            
+                            <!-- Results Container -->
+                            <div class="flex-1 overflow-hidden">
+                                <div class="mb-3">
+                                    <p class="text-white/60 text-sm">Resultados de búsqueda:</p>
+                                </div>
+                                <div id="youtubeResults" class="h-96 overflow-y-auto scrollbar-custom pr-2"></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Playlist -->
                     <div class="flex-1 overflow-hidden min-h-0">
@@ -505,6 +597,10 @@
                             class="flex-1 glass-morphism hover:bg-red-500/20 rounded-xl py-2 text-sm text-white/70 hover:text-red-400 transition-all">
                             <i class="fas fa-trash mr-2"></i>Limpiar
                         </button>
+                        <button id="testYouTubeBtn"
+                            class="flex-1 glass-morphism hover:bg-yellow-500/20 rounded-xl py-2 text-sm text-white/70 hover:text-yellow-400 transition-all">
+                            <i class="fab fa-youtube mr-2"></i>Test YT
+                        </button>
                     </div>
                 </div>
             </div>
@@ -514,6 +610,14 @@
 
     <!-- Hidden Audio Element -->
     <audio id="audioPlayer" controls style="display: none;"></audio>
+    
+    <!-- YouTube Player Container -->
+    <div id="youtubePlayerContainer" style="display: none;">
+        <div id="youtubePlayer"></div>
+    </div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
         const API_BASE = 'http://localhost:5000';
@@ -522,6 +626,12 @@
         let isPlaying = false;
         let currentTrackIndex = -1;
         let isDragging = false;
+        
+        // YouTube Player variables
+        let youtubePlayer = null;
+        let isYouTubePlayerReady = false;
+        let isPlayingYouTube = false;
+        let currentYouTubeVideoId = null;
 
         // Update progress ring and bar
         function updateProgress(percent) {
@@ -597,16 +707,23 @@
                         div.classList.add('active');
                     }
 
+                    // Determinar si es YouTube o archivo local
+                    const isYouTube = isYouTubeUrl(track.path);
+                    const iconClass = isYouTube ? 'fab fa-youtube' : 'fas fa-music';
+                    const bgClass = isCurrentTrack ? 
+                        (isYouTube ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-blue-500 to-blue-600') :
+                        (isYouTube ? 'bg-gradient-to-br from-red-700 to-red-800' : 'bg-gradient-to-br from-gray-600 to-gray-700');
+
                     div.innerHTML = `
-                        <div class="w-12 h-12 ${isCurrentTrack ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-gray-600 to-gray-700'} rounded-xl flex items-center justify-center flex-shrink-0 relative z-10">
-                            ${isCurrentTrack && isPlaying ?
+                        <div class="w-12 h-12 ${bgClass} rounded-xl flex items-center justify-center flex-shrink-0 relative z-10">
+                            ${isCurrentTrack && (isPlaying || isPlayingYouTube) ?
                             '<i class="fas fa-pause text-white text-sm"></i>' :
-                            '<i class="fas fa-music text-white/80 text-sm"></i>'
+                            `<i class="${iconClass} text-white/80 text-sm"></i>`
                         }
                         </div>
                         <div class="flex-1 min-w-0 relative z-10">
                             <p class="text-white font-medium text-sm truncate">${trackInfo.title}</p>
-                            <p class="text-white/60 text-xs">${trackInfo.artist}</p>
+                            <p class="text-white/60 text-xs">${trackInfo.artist} ${isYouTube ? '• YouTube' : '• Local'}</p>
                         </div>
                         <div class="flex items-center gap-2 relative z-10">
                             <span class="text-white/40 text-xs">${formatTime(0)}</span>
@@ -656,7 +773,16 @@
                     document.getElementById('trackNumber').textContent = `Pista ${trackInfo.trackNumber}`;
                     document.getElementById('albumTitle').textContent = trackInfo.title;
 
-                    audio.src = `${API_BASE}${currentTrack.path}`;
+                    // Verificar si es una URL de YouTube
+                    if (isYouTubeUrl(currentTrack.path)) {
+                        console.log('Current track is YouTube URL:', currentTrack.path);
+                        // No configurar audio.src para URLs de YouTube
+                        stopYouTubeVideo(); // Detener cualquier video anterior
+                    } else {
+                        console.log('Current track is local file:', currentTrack.path);
+                        stopYouTubeVideo(); // Detener YouTube si estaba reproduciéndose
+                        audio.src = `${API_BASE}${currentTrack.path}`;
+                    }
                     updatePlayPauseIcon();
                 } else {
                     document.getElementById('currentTrack').textContent = 'Ninguna Pista Seleccionada';
@@ -665,6 +791,7 @@
                     document.getElementById('trackNumber').textContent = 'Pista 01';
                     document.getElementById('albumTitle').textContent = 'Selecciona una Canción';
                     currentTrack = null;
+                    stopYouTubeVideo();
                     updatePlayPauseIcon();
                 }
             } catch (error) {
@@ -739,44 +866,84 @@
         });
 
         document.getElementById('prevBtn').addEventListener('click', async () => {
-            const wasPlaying = isPlaying;
+            const wasPlaying = isPlaying || isPlayingYouTube;
             await fetch(`${API_BASE}/prev`, { method: 'POST' });
             await loadCurrentTrack();
             loadPlaylist();
             
             // Si estaba reproduciendo, continuar reproduciendo la nueva canción
             if (wasPlaying && currentTrack) {
-                audio.load();
-                audio.play();
-                isPlaying = true;
-                updatePlayPauseIcon();
+                if (isYouTubeUrl(currentTrack.path)) {
+                    const videoId = extractYouTubeVideoId(currentTrack.path);
+                    if (videoId) {
+                        playYouTubeVideo(videoId);
+                    }
+                } else {
+                    audio.load();
+                    audio.play();
+                    isPlaying = true;
+                    updatePlayPauseIcon();
+                }
             }
         });
 
         document.getElementById('nextBtn').addEventListener('click', async () => {
-            const wasPlaying = isPlaying;
+            const wasPlaying = isPlaying || isPlayingYouTube;
             await fetch(`${API_BASE}/next`, { method: 'POST' });
             await loadCurrentTrack();
             loadPlaylist();
             
             // Si estaba reproduciendo, continuar reproduciendo la nueva canción
             if (wasPlaying && currentTrack) {
-                audio.load();
-                audio.play();
-                isPlaying = true;
-                updatePlayPauseIcon();
+                if (isYouTubeUrl(currentTrack.path)) {
+                    const videoId = extractYouTubeVideoId(currentTrack.path);
+                    if (videoId) {
+                        playYouTubeVideo(videoId);
+                    }
+                } else {
+                    audio.load();
+                    audio.play();
+                    isPlaying = true;
+                    updatePlayPauseIcon();
+                }
             }
         });
 
         document.getElementById('playPauseBtn').addEventListener('click', () => {
-            if (audio.paused) {
-                audio.play();
-                isPlaying = true;
-            } else {
-                audio.pause();
-                isPlaying = false;
+            if (!currentTrack) {
+                console.log('No current track to play');
+                return;
             }
-            updatePlayPauseIcon();
+
+            // Si es una URL de YouTube
+            if (isYouTubeUrl(currentTrack.path)) {
+                const videoId = extractYouTubeVideoId(currentTrack.path);
+                if (videoId) {
+                    if (isPlayingYouTube) {
+                        pauseYouTubeVideo();
+                    } else {
+                        if (currentYouTubeVideoId === videoId && youtubePlayer) {
+                            // Reanudar el mismo video
+                            youtubePlayer.playVideo();
+                        } else {
+                            // Reproducir nuevo video
+                            playYouTubeVideo(videoId);
+                        }
+                    }
+                } else {
+                    console.error('Could not extract YouTube video ID from:', currentTrack.path);
+                }
+            } else {
+                // Archivo local
+                if (audio.paused) {
+                    audio.play();
+                    isPlaying = true;
+                } else {
+                    audio.pause();
+                    isPlaying = false;
+                }
+                updatePlayPauseIcon();
+            }
         });
 
         document.getElementById('shuffleBtn').addEventListener('click', async () => {
@@ -926,10 +1093,22 @@
             await fetch(`${API_BASE}/set_current/${index}`, { method: 'POST' });
             await loadCurrentTrack();
             loadPlaylist(); // Refresh to show current track highlight
-            audio.load();
-            audio.play();
-            isPlaying = true;
-            updatePlayPauseIcon();
+            
+            // Reproducir según el tipo de archivo
+            if (currentTrack && isYouTubeUrl(currentTrack.path)) {
+                const videoId = extractYouTubeVideoId(currentTrack.path);
+                if (videoId) {
+                    playYouTubeVideo(videoId);
+                } else {
+                    console.error('Could not extract YouTube video ID');
+                }
+            } else {
+                // Archivo local
+                audio.load();
+                audio.play();
+                isPlaying = true;
+                updatePlayPauseIcon();
+            }
         }
 
         // Remove track function
@@ -954,7 +1133,7 @@
             await fetch(`${API_BASE}/next`, { method: 'POST' });
             await loadCurrentTrack();
             loadPlaylist();
-            
+
             // Reproducir automáticamente la siguiente canción
             if (currentTrack) {
                 audio.load();
@@ -974,9 +1153,642 @@
             updatePlayPauseIcon();
         });
 
+        // Error handling for audio
+        audio.addEventListener('error', (e) => {
+            console.error('Audio error:', e);
+            isPlaying = false;
+            updatePlayPauseIcon();
+            showNotification('❌ Error al reproducir el archivo de audio', 'error');
+        });
+
+        audio.addEventListener('loadstart', () => {
+            console.log('Audio load start');
+        });
+
+        audio.addEventListener('canplay', () => {
+            console.log('Audio can play');
+        });
+
+        // YouTube Integration Functions
+        document.getElementById('youtubeBtn').addEventListener('click', () => {
+            document.getElementById('youtubeModal').classList.remove('hidden');
+        });
+
+        document.getElementById('closeYoutubeModal').addEventListener('click', () => {
+            document.getElementById('youtubeModal').classList.add('hidden');
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('youtubeModal').addEventListener('click', (e) => {
+            if (e.target.id === 'youtubeModal') {
+                document.getElementById('youtubeModal').classList.add('hidden');
+            }
+        });
+
+        // YouTube search functionality
+        let searchTimeout;
+        document.getElementById('youtubeSearchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+            
+            if (query.length > 2) {
+                searchTimeout = setTimeout(() => {
+                    searchYouTube(query);
+                }, 500);
+            } else {
+                document.getElementById('youtubeResults').innerHTML = '';
+            }
+        });
+
+        // Add YouTube URL directly
+        document.getElementById('addYoutubeUrl').addEventListener('click', async () => {
+            const url = document.getElementById('youtubeUrlInput').value.trim();
+            if (!url) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/youtube/add_url`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('youtubeUrlInput').value = '';
+                    document.getElementById('youtubeModal').classList.add('hidden');
+                    loadPlaylist();
+                    alert('¡Video de YouTube añadido a la playlist!');
+                } else {
+                    alert('Error: ' + (result.error || 'No se pudo añadir el video'));
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        });
+
+        async function searchYouTube(query) {
+            const resultsContainer = document.getElementById('youtubeResults');
+            
+            // Mostrar indicador de carga
+            resultsContainer.innerHTML = `
+                <div class="text-center text-white/60 py-8">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                    <p>Buscando en YouTube...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`${API_BASE}/youtube/search?q=${encodeURIComponent(query)}&max_results=8`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP ${response.status}`);
+                }
+                
+                const results = await response.json();
+                
+                // Verificar si results es un array
+                if (!Array.isArray(results)) {
+                    throw new Error('Respuesta inválida del servidor');
+                }
+                
+                displayYouTubeResults(results);
+            } catch (error) {
+                console.error('YouTube search error:', error);
+                resultsContainer.innerHTML = `
+                    <div class="text-center text-white/60 py-8">
+                        <i class="fas fa-exclamation-triangle text-3xl mb-2 text-red-400"></i>
+                        <p class="text-red-400">Error en la búsqueda</p>
+                        <p class="text-sm mt-1">${error.message}</p>
+                    </div>
+                `;
+                showNotification('❌ Error en búsqueda de YouTube: ' + error.message, 'error');
+            }
+        }
+
+        function displayYouTubeResults(results) {
+            const resultsContainer = document.getElementById('youtubeResults');
+            resultsContainer.innerHTML = '';
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center text-white/60 py-8">
+                        <i class="fas fa-search text-3xl mb-2"></i>
+                        <p>No se encontraron resultados</p>
+                    </div>
+                `;
+                return;
+            }
+
+            results.forEach((video, index) => {
+                const div = document.createElement('div');
+                div.className = 'youtube-result-card rounded-2xl p-5 mb-4';
+                
+                const duration = formatDuration(video.duration);
+                
+                div.innerHTML = `
+                    <div class="flex items-start gap-4">
+                        <div class="w-24 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden shadow-lg">
+                            ${video.thumbnail ? 
+                                `<img src="${video.thumbnail}" alt="Thumbnail" class="w-full h-full object-cover rounded-xl">` :
+                                '<i class="fab fa-youtube text-white text-xl"></i>'
+                            }
+                            <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                <i class="fas fa-play text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-white font-semibold text-base truncate mb-2 leading-tight">${video.title}</h4>
+                            <div class="flex items-center gap-2 mb-3">
+                                <p class="text-white/70 text-sm">${video.uploader}</p>
+                                <span class="text-white/40">•</span>
+                                <p class="text-white/50 text-sm">${duration}</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button class="download-btn youtube-btn bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl text-white text-sm font-medium shadow-lg" data-url="${video.url}" data-title="${video.title}" data-uploader="${video.uploader}">
+                                    <i class="fas fa-download mr-2"></i>Descargar
+                                </button>
+                                <button class="add-url-btn youtube-btn bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-white text-sm font-medium shadow-lg" data-url="${video.url}" data-title="${video.title}" data-uploader="${video.uploader}">
+                                    <i class="fas fa-plus mr-2"></i>Añadir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                resultsContainer.appendChild(div);
+            });
+
+            // Agregar event listeners después de que todos los elementos estén en el DOM
+            setTimeout(() => {
+                const downloadBtns = resultsContainer.querySelectorAll('.download-btn');
+                const addUrlBtns = resultsContainer.querySelectorAll('.add-url-btn');
+
+                downloadBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const url = btn.getAttribute('data-url');
+                        const title = btn.getAttribute('data-title');
+                        const uploader = btn.getAttribute('data-uploader');
+                        console.log('Download clicked:', url);
+                        downloadFromYouTube(url, btn, title, uploader);
+                    });
+                });
+
+                addUrlBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const url = btn.getAttribute('data-url');
+                        const title = btn.getAttribute('data-title');
+                        const uploader = btn.getAttribute('data-uploader');
+                        console.log('Add URL clicked:', url);
+                        addYouTubeUrl(url, btn, title, uploader);
+                    });
+                });
+            }, 100);
+        }
+
+        async function downloadFromYouTube(url, button, title, uploader) {
+            console.log('Starting download for:', url);
+            const originalText = button.innerHTML;
+            const originalClass = button.className;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Descargando...';
+            button.disabled = true;
+            button.classList.add('opacity-75');
+
+            try {
+                console.log('Sending download request...');
+                const response = await fetch(`${API_BASE}/youtube/download`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (response.ok && result.success) {
+                    button.innerHTML = '<i class="fas fa-check mr-2"></i>¡Descargado!';
+                    button.className = 'bg-green-800 px-4 py-2 rounded-xl text-white text-xs font-medium shadow-lg';
+                    
+                    // Mostrar notificación de éxito
+                    showNotification('✅ Canción descargada y añadida a la playlist', 'success');
+                    
+                    setTimeout(() => {
+                        document.getElementById('youtubeModal').classList.add('hidden');
+                        loadPlaylist();
+                        loadCurrentTrack();
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || `Error HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                button.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Error';
+                button.className = 'bg-red-600 px-4 py-2 rounded-xl text-white text-xs font-medium shadow-lg';
+                
+                showNotification('❌ Error al descargar: ' + error.message, 'error');
+            }
+
+            // Restaurar botón después de 4 segundos
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.className = originalClass;
+                button.disabled = false;
+            }, 4000);
+        }
+
+        async function addYouTubeUrl(url, button, title, uploader) {
+            console.log('Adding URL:', url);
+            const originalText = button.innerHTML;
+            const originalClass = button.className;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Añadiendo...';
+            button.disabled = true;
+            button.classList.add('opacity-75');
+
+            try {
+                console.log('Sending add URL request...');
+                const response = await fetch(`${API_BASE}/youtube/add_url`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (response.ok && result.success) {
+                    button.innerHTML = '<i class="fas fa-check mr-2"></i>¡Añadido!';
+                    button.className = 'bg-blue-800 px-4 py-2 rounded-xl text-white text-xs font-medium shadow-lg';
+                    
+                    // Mostrar notificación de éxito
+                    let message = '✅ Video añadido a la playlist';
+                    if (result.warning) {
+                        message += `\n⚠️ ${result.warning}`;
+                        showNotification(message, 'warning');
+                    } else {
+                        showNotification(message, 'success');
+                    }
+                    
+                    setTimeout(() => {
+                        document.getElementById('youtubeModal').classList.add('hidden');
+                        loadPlaylist();
+                        loadCurrentTrack();
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || `Error HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Add URL error:', error);
+                button.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Error';
+                button.className = 'bg-red-600 px-4 py-2 rounded-xl text-white text-xs font-medium shadow-lg';
+                
+                showNotification('❌ Error al añadir: ' + error.message, 'error');
+            }
+
+            // Restaurar botón después de 4 segundos
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.className = originalClass;
+                button.disabled = false;
+            }, 4000);
+        }
+
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-xl text-white font-medium shadow-2xl transform translate-x-full transition-transform duration-300 ${
+                type === 'success' ? 'bg-green-600' : 
+                type === 'error' ? 'bg-red-600' : 
+                type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+            }`;
+            // Manejar mensajes multilinea
+            if (message.includes('\n')) {
+                const lines = message.split('\n');
+                lines.forEach((line, index) => {
+                    const p = document.createElement('p');
+                    p.textContent = line;
+                    if (index > 0) p.className = 'mt-1 text-sm opacity-90';
+                    notification.appendChild(p);
+                });
+            } else {
+                notification.textContent = message;
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Animar entrada
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Animar salida y eliminar
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // YouTube Player API Functions
+        function onYouTubeIframeAPIReady() {
+            console.log('YouTube API Ready - Initializing player...');
+            try {
+                youtubePlayer = new YT.Player('youtubePlayer', {
+                    height: '1',
+                    width: '1',
+                    playerVars: {
+                        'autoplay': 0,
+                        'controls': 0,
+                        'disablekb': 1,
+                        'fs': 0,
+                        'modestbranding': 1,
+                        'rel': 0,
+                        'iv_load_policy': 3,
+                        'cc_load_policy': 0,
+                        'playsinline': 1
+                    },
+                    events: {
+                        'onReady': onYouTubePlayerReady,
+                        'onStateChange': onYouTubePlayerStateChange,
+                        'onError': onYouTubePlayerError
+                    }
+                });
+            } catch (error) {
+                console.error('Error initializing YouTube player:', error);
+            }
+        }
+
+        function onYouTubePlayerReady(event) {
+            console.log('YouTube Player Ready - Can now play videos');
+            isYouTubePlayerReady = true;
+            
+            // Configurar volumen inicial
+            try {
+                youtubePlayer.setVolume(80);
+            } catch (error) {
+                console.error('Error setting YouTube volume:', error);
+            }
+        }
+
+        function onYouTubePlayerError(event) {
+            console.error('YouTube Player Error:', event.data);
+            const errorMessages = {
+                2: 'Video ID inválido',
+                5: 'Error de HTML5 player',
+                100: 'Video no encontrado o privado',
+                101: 'Video no permite reproducción embebida',
+                150: 'Video no permite reproducción embebida'
+            };
+            const message = errorMessages[event.data] || 'Error desconocido';
+            showNotification(`❌ Error de YouTube: ${message}`, 'error');
+            
+            // Si hay error, intentar ir a la siguiente canción
+            if (event.data === 150 || event.data === 101) {
+                console.log('Video bloqueado, intentando siguiente canción...');
+                setTimeout(() => {
+                    nextTrack();
+                }, 2000);
+            }
+        }
+
+        function onYouTubePlayerStateChange(event) {
+            console.log('YouTube Player State:', event.data);
+            
+            switch(event.data) {
+                case YT.PlayerState.UNSTARTED: // -1
+                    console.log('YouTube: Video unstarted');
+                    break;
+                    
+                case YT.PlayerState.ENDED: // 0
+                    console.log('YouTube: Video ended');
+                    isPlayingYouTube = false;
+                    isPlaying = false;
+                    updatePlayPauseIcon();
+                    
+                    // Ir a la siguiente canción automáticamente
+                    setTimeout(() => {
+                        document.getElementById('nextBtn').click();
+                    }, 500);
+                    break;
+                    
+                case YT.PlayerState.PLAYING: // 1
+                    console.log('YouTube: Video playing');
+                    isPlayingYouTube = true;
+                    isPlaying = true;
+                    updatePlayPauseIcon();
+                    
+                    // Pausar audio local si está reproduciéndose
+                    if (!audio.paused) {
+                        audio.pause();
+                        console.log('Paused local audio');
+                    }
+                    
+                    // Iniciar actualización de progreso
+                    startYouTubeProgressUpdate();
+                    break;
+                    
+                case YT.PlayerState.PAUSED: // 2
+                    console.log('YouTube: Video paused');
+                    isPlayingYouTube = false;
+                    isPlaying = false;
+                    updatePlayPauseIcon();
+                    stopYouTubeProgressUpdate();
+                    break;
+                    
+                case YT.PlayerState.BUFFERING: // 3
+                    console.log('YouTube: Video buffering');
+                    break;
+                    
+                case YT.PlayerState.CUED: // 5
+                    console.log('YouTube: Video cued and ready');
+                    break;
+            }
+        }
+
+        function extractYouTubeVideoId(url) {
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        }
+
+        function isYouTubeUrl(url) {
+            return url && (url.includes('youtube.com') || url.includes('youtu.be'));
+        }
+
+        function playYouTubeVideo(videoId) {
+            console.log('Attempting to play YouTube video:', videoId);
+
+            if (!isYouTubePlayerReady || !youtubePlayer) {
+                console.log('YouTube player not ready, retrying in 2 seconds...');
+                showNotification('⏳ Preparando reproductor de YouTube...', 'info');
+                setTimeout(() => playYouTubeVideo(videoId), 2000);
+                return false;
+            }
+
+            try {
+                console.log('Loading and playing YouTube video:', videoId);
+                currentYouTubeVideoId = videoId;
+
+                // Pausar audio local
+                if (!audio.paused) {
+                    audio.pause();
+                    console.log('Paused local audio');
+                }
+
+                // Cargar y reproducir video de YouTube
+                youtubePlayer.loadVideoById({
+                    videoId: videoId,
+                    startSeconds: 0
+                });
+
+                // Actualizar estados
+                isPlayingYouTube = true;
+                isPlaying = true;
+                updatePlayPauseIcon();
+
+                // Pequeño delay para asegurar que el video se cargue
+                setTimeout(() => {
+                    youtubePlayer.playVideo();
+                    console.log('YouTube video play command sent');
+                }, 500);
+
+                return true;
+            } catch (error) {
+                console.error('Error playing YouTube video:', error);
+                showNotification('❌ Error reproduciendo video de YouTube', 'error');
+                return false;
+            }
+        }
+
+        function pauseYouTubeVideo() {
+            if (youtubePlayer && isPlayingYouTube) {
+                youtubePlayer.pauseVideo();
+                isPlayingYouTube = false;
+                isPlaying = false;
+                updatePlayPauseIcon();
+            }
+        }
+
+        function stopYouTubeVideo() {
+            if (youtubePlayer) {
+                youtubePlayer.stopVideo();
+                isPlayingYouTube = false;
+                currentYouTubeVideoId = null;
+                stopYouTubeProgressUpdate();
+            }
+        }
+
+        // Variables para actualización de progreso de YouTube
+        let youtubeProgressInterval = null;
+
+        function startYouTubeProgressUpdate() {
+            stopYouTubeProgressUpdate(); // Limpiar cualquier intervalo anterior
+            
+            youtubeProgressInterval = setInterval(() => {
+                if (youtubePlayer && isPlayingYouTube) {
+                    try {
+                        const currentTime = youtubePlayer.getCurrentTime();
+                        const duration = youtubePlayer.getDuration();
+                        
+                        if (duration > 0) {
+                            const percent = (currentTime / duration) * 100;
+                            updateProgress(percent);
+                            
+                            document.getElementById('currentTime').textContent = formatTime(currentTime);
+                            document.getElementById('totalTime').textContent = formatTime(duration);
+                        }
+                    } catch (error) {
+                        console.error('Error updating YouTube progress:', error);
+                    }
+                }
+            }, 1000);
+        }
+
+        function stopYouTubeProgressUpdate() {
+            if (youtubeProgressInterval) {
+                clearInterval(youtubeProgressInterval);
+                youtubeProgressInterval = null;
+            }
+        }
+
+        // Test YouTube button
+        document.getElementById('testYouTubeBtn').addEventListener('click', async () => {
+            console.log('Testing YouTube integration...');
+            
+            try {
+                // Probar la API del backend primero
+                const response = await fetch(`${API_BASE}/youtube/test`);
+                const result = await response.json();
+                
+                console.log('Backend test result:', result);
+                
+                if (result.success) {
+                    showNotification(`✅ Backend OK - API Key: ${result.api_key_configured ? 'Configurada' : 'No configurada'}`, 'success');
+                    
+                    // Probar el player si está listo
+                    if (isYouTubePlayerReady && youtubePlayer) {
+                        console.log('Testing YouTube player...');
+                        const testVideoId = 'dQw4w9WgXcQ'; // Rick Roll
+                        console.log('Testing with video ID:', testVideoId);
+                        playYouTubeVideo(testVideoId);
+                        showNotification('🎵 Probando reproducción de YouTube', 'info');
+                    } else {
+                        showNotification('⚠️ Player no está listo, pero backend funciona', 'warning');
+                    }
+                } else {
+                    showNotification(`❌ Error en backend: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Test error:', error);
+                showNotification(`❌ Error de conexión: ${error.message}`, 'error');
+            }
+        });
+
+        // Verificar periódicamente si YouTube API está lista
+        function checkYouTubeAPI() {
+            if (typeof YT !== 'undefined' && YT.Player) {
+                console.log('YouTube API detected, initializing...');
+                if (!isYouTubePlayerReady) {
+                    onYouTubeIframeAPIReady();
+                }
+            } else {
+                console.log('YouTube API not ready yet, checking again...');
+                setTimeout(checkYouTubeAPI, 1000);
+            }
+        }
+
         // Initial load
         loadPlaylist();
         loadCurrentTrack();
+
+        // Start checking for YouTube API
+        setTimeout(checkYouTubeAPI, 1000);
+
+        // Make onYouTubeIframeAPIReady available globally
+        window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
     </script>
 </body>
 

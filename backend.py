@@ -5,14 +5,27 @@ from typing import Optional, List
 import os
 import uuid
 import pickle
+from youtube_integration import YouTubeIntegration
+from config import Config
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
 
-UPLOAD_FOLDER = 'uploads'
+# Configuración desde config.py
+app.config.from_object(Config)
+UPLOAD_FOLDER = Config.UPLOAD_FOLDER
+DOWNLOAD_FOLDER = Config.DOWNLOAD_FOLDER
 PLAYLIST_FILE = 'playlist.pkl'
+
+# Crear directorios necesarios
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+
+# Validar configuración de YouTube
+Config.validate_youtube_api()
+
+# Inicializar integración de YouTube
+youtube = YouTubeIntegration(DOWNLOAD_FOLDER)
 
 def save_playlist():
     try:
@@ -324,8 +337,197 @@ def upload_file():
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(file_path):
+        return jsonify({'error': 'File not found'}), 404
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/downloads/<filename>')
+def downloaded_file(filename):
+    file_path = os.path.join(app.config['DOWNLOAD_FOLDER'], filename)
+    if not os.path.exists(file_path):
+        return jsonify({'error': 'File not found'}), 404
+    return send_from_directory(app.config['DOWNLOAD_FOLDER'], filename)
+
+# YouTube Integration Routes
+@app.route('/youtube/search', methods=['GET'])
+def youtube_search():
+    query = request.args.get('q', '')
+    max_results = request.args.get('max_results', 10, type=int)
+    
+    if not query:
+        return jsonify({'error': 'Query parameter required'}), 400
+    
+    results = youtube.search_youtube(query, max_results)
+    return jsonify(results)
+
+@app.route('/youtube/info', methods=['POST'])
+def youtube_info():
+    data = request.json
+    video_url = data.get('url', '')
+    
+    if not video_url:
+        return jsonify({'error': 'URL required'}), 400
+    
+    info = youtube.get_video_info(video_url)
+    return jsonify(info)
+
+@app.route('/youtube/download', methods=['POST'])
+def youtube_download():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
+            
+        video_url = data.get('url', '')
+        print(f"Download request for URL: {video_url}")
+        
+        if not video_url:
+            return jsonify({'error': 'URL required'}), 400
+        
+        result = youtube.download_audio(video_url)
+        print(f"Download result: {result}")
+        
+        if result.get('success'):
+            # Agregar automáticamente a la playlist
+            track = Track(
+                path=f'/downloads/{result["filename"]}',
+                title=f'{result["title"]} - {result["artist"]}'
+            )
+            playlist.append(track)
+            save_playlist()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Downloaded and added to playlist',
+                'track': {
+                    'path': track.path,
+                    'title': track.title
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Unknown download error')
+            }), 400
+            
+    except Exception as e:
+        print(f"Error in youtube_download: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/youtube/add_url', methods=['POST'])
+def add_youtube_url():
+    """Agregar una URL de YouTube directamente sin descargar"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
+            
+        video_url = data.get('url', '')
+        print(f"Add URL request for: {video_url}")
+        
+        if not video_url:
+            return jsonify({'error': 'URL required'}), 400
+        
+        # Obtener información del video
+        try:
+            info = youtube.get_video_info(video_url)
+        except Exception as e:
+            print(f"Error getting video info: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': f'Error obteniendo información del video: {str(e)}'
+            }), 500
+
+        if 'error' in info:
+            # Sanitize error message to avoid Unicode encoding issues
+            error_msg = info['error']
+            try:
+                error_msg.encode('utf-8')
+            except UnicodeEncodeError:
+                error_msg = 'Error procesando información del video (caracteres especiales)'
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 400
+        
+        # Advertir si el video puede tener problemas de reproducción
+        warning_message = None
+        if info.get('is_live'):
+            warning_message = 'Este es un video en vivo, puede tener problemas de reproducción'
+        elif info.get('availability') not in ['public', 'unlisted']:
+            warning_message = f'Video con disponibilidad: {info.get("availability")}'
+        
+        # Crear track con URL de YouTube
+        # Sanitize title and uploader to avoid Unicode issues
+        title = info.get("title", "Unknown")
+        uploader = info.get("uploader", "Unknown")
+        try:
+            title.encode('utf-8')
+            uploader.encode('utf-8')
+        except UnicodeEncodeError:
+            title = "Título con caracteres especiales"
+            uploader = "Artista desconocido"
+
+        track = Track(
+            path=video_url,  # Guardar la URL directamente
+            title=f'{title} - {uploader}'
+        )
+        
+        playlist.append(track)
+        save_playlist()
+        
+        response_data = {
+            'success': True,
+            'message': 'YouTube video added to playlist',
+            'track': {
+                'path': track.path,
+                'title': track.title
+            }
+        }
+        
+        if warning_message:
+            response_data['warning'] = warning_message
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        error_msg = str(e)
+        # Handle Unicode encoding issues in Windows
+        try:
+            print(f"Error in add_youtube_url: {error_msg}")
+        except UnicodeEncodeError:
+            print("Error in add_youtube_url: Unicode encoding error in error message")
+        return jsonify({
+            'success': False,
+            'error': 'Server error: Error procesando la información del video'
+        }), 500
+
+
+@app.route('/youtube/test', methods=['GET'])
+def test_youtube():
+    """Endpoint de prueba para verificar la funcionalidad de YouTube"""
+    try:
+        # Probar búsqueda simple
+        results = youtube.search_youtube("test music", 2)
+        
+        return jsonify({
+            'success': True,
+            'message': 'YouTube integration working',
+            'api_key_configured': bool(youtube.api_key),
+            'results_count': len(results),
+            'sample_results': results[:1] if results else []
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'api_key_configured': bool(youtube.api_key)
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

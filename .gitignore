@@ -1,8 +1,15 @@
 # Archivos de audio subidos por usuarios
 uploads/
 
+# Archivos descargados de YouTube
+downloads/
+
 # Archivo de playlist (contiene datos temporales)
 playlist.pkl
+
+# Configuración sensible
+.env
+config.local.py
 
 # Archivos de Python
 __pycache__/
@@ -30,6 +37,8 @@ MANIFEST
 # Entornos virtuales
 venv/
 env/
+env.local
+env.example
 ENV/
 env.bak/
 venv.bak/
