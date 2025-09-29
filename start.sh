@@ -6,8 +6,8 @@ mkdir -p uploads downloads sessions
 # Set permissions
 chmod 755 uploads downloads sessions
 
-# Install system dependencies if needed
-# apt-get update && apt-get install -y ffmpeg
+# Set default port if not provided
+export PORT=${PORT:-8080}
 
 # Start the application
-exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 backend:app
+exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --worker-class sync backend:app

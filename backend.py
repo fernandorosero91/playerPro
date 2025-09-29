@@ -320,6 +320,15 @@ def move_track(from_index, to_index):
 def index():
     return send_file('index.html')
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Docker and monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'PlayerPro',
+        'version': '1.0.0'
+    }), 200
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
