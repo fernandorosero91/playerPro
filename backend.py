@@ -389,13 +389,13 @@ def youtube_download():
             return jsonify({'error': 'No JSON data received'}), 400
             
         video_url = data.get('url', '')
-        print(f"Download request for URL: {video_url}")
+        print(f"🎵 Download request for URL: {video_url}")
         
         if not video_url:
             return jsonify({'error': 'URL required'}), 400
         
         result = youtube.download_audio(video_url)
-        print(f"Download result: {result}")
+        print(f"📥 Download result: {result}")
         
         if result.get('success'):
             # Agregar automáticamente a la playlist
@@ -415,16 +415,41 @@ def youtube_download():
                 }
             })
         else:
-            return jsonify({
-                'success': False,
-                'error': result.get('error', 'Unknown download error')
-            }), 400
+            error_msg = result.get('error', 'Unknown download error')
+            
+            # Detectar errores de bot detection y proporcionar mensajes más útiles
+            if any(keyword in error_msg.lower() for keyword in ['bot detection', 'sign in', 'authentication', 'cookies']):
+                return jsonify({
+                    'success': False,
+                    'error': 'YouTube está bloqueando las descargas temporalmente debido a detección de bots. Esto es normal en servidores de producción.',
+                    'error_type': 'bot_detection',
+                    'suggestion': 'Intenta de nuevo en unos minutos o usa la función de búsqueda para encontrar contenido alternativo.',
+                    'info': result.get('info', {})
+                }), 429  # Too Many Requests
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': error_msg,
+                    'error_type': 'download_error'
+                }), 400
             
     except Exception as e:
-        print(f"Error in youtube_download: {e}")
+        error_msg = str(e)
+        print(f"❌ Error in youtube_download: {e}")
+        
+        # Detectar errores de bot detection en excepciones
+        if any(keyword in error_msg.lower() for keyword in ['bot', 'sign in', 'authentication', 'cookies']):
+            return jsonify({
+                'success': False,
+                'error': 'YouTube requiere autenticación debido a detección de bots. Esto es una restricción temporal.',
+                'error_type': 'bot_detection',
+                'suggestion': 'Intenta de nuevo más tarde.'
+            }), 429
+        
         return jsonify({
             'success': False,
-            'error': f'Server error: {str(e)}'
+            'error': f'Server error: {error_msg}',
+            'error_type': 'server_error'
         }), 500
 
 @app.route('/youtube/add_url', methods=['POST'])

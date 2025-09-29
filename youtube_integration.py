@@ -16,7 +16,7 @@ class YouTubeIntegration:
         self.base_url = "https://www.googleapis.com/youtube/v3"
         os.makedirs(download_path, exist_ok=True)
         
-        # Configuración para yt-dlp
+        # Configuración para yt-dlp con anti-detección de bots
         self.ydl_opts = {
             'format': 'bestaudio/best',
             'extractaudio': True,
@@ -29,9 +29,36 @@ class YouTubeIntegration:
             'extract_flat': False,
             'writesubtitles': False,
             'writeautomaticsub': False,
-            'retries': 3,
-            'fragment_retries': 3,
-            'skip_unavailable_fragments': True
+            'retries': 5,
+            'fragment_retries': 5,
+            'skip_unavailable_fragments': True,
+            
+            # Anti-detección de bots
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'referer': 'https://www.youtube.com/',
+            'headers': {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-us,en;q=0.5',
+                'Accept-Encoding': 'gzip,deflate',
+                'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+                'Keep-Alive': '300',
+                'Connection': 'keep-alive',
+            },
+            
+            # Configuraciones adicionales para evitar bloqueos
+            'sleep_interval': 1,
+            'max_sleep_interval': 5,
+            'sleep_interval_requests': 1,
+            'extractor_retries': 3,
+            'file_access_retries': 3,
+            'socket_timeout': 30,
+            
+            # Usar proxy si está disponible (opcional)
+            # 'proxy': 'http://proxy:port',
+            
+            # Configuraciones de YouTube específicas
+            'youtube_include_dash_manifest': False,
+            'youtube_skip_dash_manifest': True,
         }
     
     def search_youtube_api(self, query, max_results=10):
@@ -197,7 +224,7 @@ class YouTubeIntegration:
         return self.search_youtube_api(query, max_results)
     
     def download_audio(self, video_url):
-        """Descarga audio de un video de YouTube"""
+        """Descarga audio de un video de YouTube con múltiples estrategias anti-bot"""
         try:
             # Generar nombre único para el archivo
             unique_id = str(uuid.uuid4())[:8]
@@ -209,29 +236,108 @@ class YouTubeIntegration:
                 f'{unique_id}_%(title)s.%(ext)s'
             )
             
-            with yt_dlp.YoutubeDL(download_opts) as ydl:
-                # Extraer información del video
-                info = ydl.extract_info(video_url, download=False)
-                title = info.get('title', 'Unknown')
-                uploader = info.get('uploader', 'Unknown')
+            # Estrategia 1: Configuración estándar mejorada
+            try:
+                with yt_dlp.YoutubeDL(download_opts) as ydl:
+                    # Extraer información del video
+                    info = ydl.extract_info(video_url, download=False)
+                    title = info.get('title', 'Unknown')
+                    uploader = info.get('uploader', 'Unknown')
+                    
+                    # Descargar el audio
+                    ydl.download([video_url])
+                    
+                    # Encontrar el archivo descargado
+                    for file in os.listdir(self.download_path):
+                        if file.startswith(unique_id):
+                            return {
+                                'success': True,
+                                'filename': file,
+                                'title': title,
+                                'artist': uploader,
+                                'path': os.path.join(self.download_path, file)
+                            }
+                    
+                    return {'success': False, 'error': 'File not found after download'}
+                    
+            except Exception as e1:
+                error_msg = str(e1).lower()
                 
-                # Descargar el audio
-                ydl.download([video_url])
+                # Si es error de bot detection, intentar estrategias alternativas
+                if any(keyword in error_msg for keyword in ['sign in', 'bot', 'cookies', 'authentication']):
+                    print(f"🤖 Bot detection detected, trying fallback methods...")
+                    
+                    # Estrategia 2: Configuración más agresiva
+                    fallback_opts = download_opts.copy()
+                    fallback_opts.update({
+                        'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'sleep_interval': 2,
+                        'max_sleep_interval': 10,
+                        'extractor_retries': 5,
+                        'youtube_skip_dash_manifest': True,
+                        'youtube_include_dash_manifest': False,
+                        'format': 'worst[ext=mp4]/worst',  # Formato más básico
+                    })
+                    
+                    try:
+                        with yt_dlp.YoutubeDL(fallback_opts) as ydl_fallback:
+                            info = ydl_fallback.extract_info(video_url, download=False)
+                            title = info.get('title', 'Unknown')
+                            uploader = info.get('uploader', 'Unknown')
+                            
+                            ydl_fallback.download([video_url])
+                            
+                            for file in os.listdir(self.download_path):
+                                if file.startswith(unique_id):
+                                    return {
+                                        'success': True,
+                                        'filename': file,
+                                        'title': title,
+                                        'artist': uploader,
+                                        'path': os.path.join(self.download_path, file)
+                                    }
+                                    
+                    except Exception as e2:
+                        print(f"🔄 Fallback method also failed: {e2}")
+                        
+                        # Estrategia 3: Solo extraer información (sin descarga)
+                        try:
+                            info_opts = {
+                                'quiet': True,
+                                'no_warnings': True,
+                                'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15',
+                                'referer': 'https://m.youtube.com/',
+                            }
+                            
+                            with yt_dlp.YoutubeDL(info_opts) as ydl_info:
+                                info = ydl_info.extract_info(video_url, download=False)
+                                
+                                return {
+                                    'success': False, 
+                                    'error': 'YouTube blocked download due to bot detection. Try again later.',
+                                    'info': {
+                                        'title': info.get('title', 'Unknown'),
+                                        'uploader': info.get('uploader', 'Unknown'),
+                                        'duration': info.get('duration', 0)
+                                    }
+                                }
+                                
+                        except Exception as e3:
+                            return {
+                                'success': False, 
+                                'error': f'YouTube bot detection active. All extraction methods failed. Error: {str(e1)}'
+                            }
                 
-                # Encontrar el archivo descargado
-                for file in os.listdir(self.download_path):
-                    if file.startswith(unique_id):
-                        return {
-                            'success': True,
-                            'filename': file,
-                            'title': title,
-                            'artist': uploader,
-                            'path': os.path.join(self.download_path, file)
-                        }
-                
-                return {'success': False, 'error': 'File not found after download'}
+                # Si no es error de bot, re-lanzar el error original
+                raise e1
                 
         except Exception as e:
+            error_msg = str(e)
+            if any(keyword in error_msg.lower() for keyword in ['sign in', 'bot', 'cookies', 'authentication']):
+                return {
+                    'success': False, 
+                    'error': 'YouTube requires authentication due to bot detection. This is a temporary restriction.'
+                }
             return {'success': False, 'error': str(e)}
     
     def get_video_info(self, video_url):
