@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory, send_file, Response
 from flask_cors import CORS
 from dataclasses import dataclass
 from typing import Optional, List
 import os
 import uuid
 import pickle
+import requests
 from youtube_integration import YouTubeIntegration
 from config import Config
 
@@ -562,6 +563,49 @@ def test_youtube():
             'error': str(e),
             'api_key_configured': bool(youtube.api_key)
         }), 500
+
+@app.route('/proxy/deezer', methods=['GET'])
+def proxy_deezer():
+    """Proxy endpoint para servir previews de Deezer y evitar problemas de CORS"""
+    try:
+        deezer_url = request.args.get('url')
+        if not deezer_url:
+            return jsonify({'error': 'URL parameter is required'}), 400
+        
+        # Verificar que sea una URL de Deezer válida
+        if 'dzcdn.net' not in deezer_url:
+            return jsonify({'error': 'Invalid Deezer URL'}), 400
+        
+        # Hacer la petición a Deezer
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Referer': 'https://www.deezer.com/',
+            'Accept': 'audio/mpeg,audio/*,*/*'
+        }
+        
+        response = requests.get(deezer_url, headers=headers, stream=True)
+        
+        if response.status_code == 200:
+            # Crear una respuesta streaming
+            def generate():
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        yield chunk
+            
+            return Response(
+                generate(),
+                content_type=response.headers.get('content-type', 'audio/mpeg'),
+                headers={
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': response.headers.get('content-length'),
+                    'Cache-Control': 'public, max-age=3600'
+                }
+            )
+        else:
+            return jsonify({'error': f'Failed to fetch audio: {response.status_code}'}), response.status_code
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     import os

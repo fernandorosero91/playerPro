@@ -523,44 +523,34 @@
                     </button>
                     <input type="file" id="fileInput" multiple accept="audio/*" class="hidden">
 
-                    <!-- YouTube Integration -->
-                    <button id="youtubeBtn"
-                        class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-2xl py-3 mb-6 text-white font-medium transition-all flex items-center justify-center gap-2 shadow-lg">
-                        <i class="fab fa-youtube"></i>
-                        Buscar en YouTube
+                    <!-- Deezer Integration -->
+                    <button id="deezerBtn"
+                        class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 rounded-2xl py-3 mb-6 text-white font-medium transition-all flex items-center justify-center gap-2 shadow-lg">
+                        <i class="fas fa-music"></i>
+                        Buscar en Internet
                     </button>
 
-                    <!-- YouTube Search Modal -->
-                    <div id="youtubeModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <!-- Deezer Search Modal -->
+                    <div id="deezerModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
                         <div class="glass-morphism rounded-3xl p-6 w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-white/20">
                             <!-- Header -->
                             <div class="flex items-center justify-between mb-6">
                                 <h3 class="text-2xl font-bold text-white flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center">
-                                        <i class="fab fa-youtube text-white text-lg"></i>
+                                    <div class="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-music text-white text-lg"></i>
                                     </div>
-                                    Buscar en YouTube
+                                    Buscar en Internet
                                 </h3>
-                                <button id="closeYoutubeModal" class="w-10 h-10 rounded-xl glass-morphism flex items-center justify-center text-white/70 hover:text-white transition-all hover:bg-white/10">
+                                <button id="closeDeezerModal" class="w-10 h-10 rounded-xl glass-morphism flex items-center justify-center text-white/70 hover:text-white transition-all hover:bg-white/10">
                                     <i class="fas fa-times text-lg"></i>
                                 </button>
                             </div>
                             
                             <!-- Search Input -->
-                            <div class="relative mb-4">
-                                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50"></i>
-                                <input type="text" id="youtubeSearchInput" placeholder="Buscar música en YouTube..."
-                                       class="search-input w-full pl-12 pr-4 py-4 rounded-2xl text-white placeholder-white/50 focus:outline-none text-lg">
-                            </div>
-                            
-                            <!-- URL Input -->
                             <div class="relative mb-6">
-                                <i class="fab fa-youtube absolute left-4 top-1/2 transform -translate-y-1/2 text-red-500"></i>
-                                <input type="text" id="youtubeUrlInput" placeholder="O pega una URL de YouTube..."
-                                       class="search-input w-full pl-12 pr-24 py-4 rounded-2xl text-white placeholder-white/50 focus:outline-none">
-                                <button id="addYoutubeUrl" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl text-white text-sm font-medium transition-all hover:scale-105 shadow-lg">
-                                    <i class="fas fa-plus mr-1"></i>Añadir
-                                </button>
+                                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50"></i>
+                                <input type="text" id="deezerSearchInput" placeholder="Buscar música en internet..."
+                                       class="search-input w-full pl-12 pr-4 py-4 rounded-2xl text-white placeholder-white/50 focus:outline-none text-lg">
                             </div>
                             
                             <!-- Results Container -->
@@ -568,7 +558,7 @@
                                 <div class="mb-3">
                                     <p class="text-white/60 text-sm">Resultados de búsqueda:</p>
                                 </div>
-                                <div id="youtubeResults" class="h-96 overflow-y-auto scrollbar-custom pr-2"></div>
+                                <div id="deezerResults" class="h-96 overflow-y-auto scrollbar-custom pr-2"></div>
                             </div>
                         </div>
                     </div>
@@ -597,10 +587,7 @@
                             class="flex-1 glass-morphism hover:bg-red-500/20 rounded-xl py-2 text-sm text-white/70 hover:text-red-400 transition-all">
                             <i class="fas fa-trash mr-2"></i>Limpiar
                         </button>
-                        <button id="testYouTubeBtn"
-                            class="flex-1 glass-morphism hover:bg-yellow-500/20 rounded-xl py-2 text-sm text-white/70 hover:text-yellow-400 transition-all">
-                            <i class="fab fa-youtube mr-2"></i>Test YT
-                        </button>
+
                     </div>
                 </div>
             </div>
@@ -610,6 +597,9 @@
 
     <!-- Hidden Audio Element -->
     <audio id="audioPlayer" controls style="display: none;"></audio>
+    
+    <!-- Deezer Audio Element -->
+    <audio id="deezerPlayer" controls style="display: none;" crossorigin="anonymous"></audio>
     
     <!-- YouTube Player Container -->
     <div id="youtubePlayerContainer" style="display: none;">
@@ -635,6 +625,7 @@
         let currentTrack = null;
         let isPlaying = false;
         let currentTrackIndex = -1;
+        let shouldAutoplayDeezer = false; // Flag para reproducción automática de Deezer
         let isDragging = false;
         
         // YouTube Player variables
@@ -684,6 +675,69 @@
             }
 
             return { artist, title, trackNumber };
+        }
+
+        // Add song to playlist
+        async function addSongToPlaylist(song) {
+            try {
+                // Para previews de Deezer, almacenamos los datos completos en formato JSON
+                let path, title;
+                
+                if (song.source === 'deezer') {
+                    // Usar el formato nuevo con datos completos
+                    title = `${song.title} - ${song.artist} (Preview)`;
+                    path = song.url; // Ya contiene el formato deezer:JSON
+                } else {
+                    // Para otros tipos de canciones
+                    title = `${song.title} - ${song.artist} (Preview)`;
+                    path = `deezer:${song.artist} - ${song.title}`;
+                }
+                
+                const formData = new FormData();
+                formData.append('path', path);
+                formData.append('title', title);
+                formData.append('position', 'end');
+                
+                const response = await fetch(`${API_BASE}/add`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    // Recargar la playlist para mostrar la nueva canción
+                    await loadPlaylist();
+                    
+                    // Si es una canción de Deezer, reproducirla automáticamente
+                    if (song.source === 'deezer') {
+                        // Obtener la playlist actualizada para encontrar el índice de la nueva canción
+                        const playlistResponse = await fetch(`${API_BASE}/playlist`);
+                        const tracks = await playlistResponse.json();
+                        
+                        // Encontrar el índice de la canción recién agregada
+                        const newTrackIndex = tracks.findIndex(track => track.path === path);
+                        
+                        if (newTrackIndex !== -1) {
+                            // Activar flag de reproducción automática
+                            shouldAutoplayDeezer = true;
+                            
+                            // Cambiar a la nueva canción y cargarla
+                            await fetch(`${API_BASE}/current/${newTrackIndex}`, { method: 'POST' });
+                            await loadCurrentTrack();
+                            
+                            // Mostrar notificación de que se está cargando
+                            showNotification(`🎵 Cargando: ${song.title} - ${song.artist}`, 'info');
+                        }
+                    }
+                    
+                    return true;
+                } else {
+                    throw new Error('Error al agregar canción a la playlist');
+                }
+            } catch (error) {
+                console.error('Error adding song to playlist:', error);
+                showNotification('❌ Error al agregar canción: ' + error.message, 'error');
+                return false;
+            }
         }
 
         // Load playlist
@@ -788,9 +842,15 @@
                         console.log('Current track is YouTube URL:', currentTrack.path);
                         // No configurar audio.src para URLs de YouTube
                         stopYouTubeVideo(); // Detener cualquier video anterior
+                    } else if (isDeezerUrl(currentTrack.path)) {
+                        console.log('Current track is Deezer preview URL:', currentTrack.path);
+                        stopYouTubeVideo(); // Detener YouTube si estaba reproduciéndose
+                        // Para URLs de Deezer, usar el reproductor principal
+                        setupDeezerPlayer(currentTrack.path);
                     } else {
                         console.log('Current track is local file:', currentTrack.path);
                         stopYouTubeVideo(); // Detener YouTube si estaba reproduciéndose
+                        audio.crossOrigin = null; // Resetear crossOrigin para archivos locales
                         audio.src = `${API_BASE}${currentTrack.path}`;
                     }
                     updatePlayPauseIcon();
@@ -877,6 +937,11 @@
 
         document.getElementById('prevBtn').addEventListener('click', async () => {
             const wasPlaying = isPlaying || isPlayingYouTube;
+            
+            // Detener cualquier reproducción actual
+            stopYouTubeVideo();
+            // Deezer ahora usa el reproductor principal, se detiene automáticamente
+            
             await fetch(`${API_BASE}/prev`, { method: 'POST' });
             await loadCurrentTrack();
             loadPlaylist();
@@ -888,6 +953,11 @@
                     if (videoId) {
                         playYouTubeVideo(videoId);
                     }
+                } else if (isDeezerUrl(currentTrack.path)) {
+                    // Deezer usa el reproductor principal, solo hacer play
+                    audio.play();
+                    isPlaying = true;
+                    updatePlayPauseIcon();
                 } else {
                     audio.load();
                     audio.play();
@@ -899,6 +969,11 @@
 
         document.getElementById('nextBtn').addEventListener('click', async () => {
             const wasPlaying = isPlaying || isPlayingYouTube;
+            
+            // Detener cualquier reproducción actual
+            stopYouTubeVideo();
+            // Deezer ahora usa el reproductor principal, se detiene automáticamente
+            
             await fetch(`${API_BASE}/next`, { method: 'POST' });
             await loadCurrentTrack();
             loadPlaylist();
@@ -910,6 +985,8 @@
                     if (videoId) {
                         playYouTubeVideo(videoId);
                     }
+                } else if (isDeezerUrl(currentTrack.path)) {
+                    playDeezerPreview();
                 } else {
                     audio.load();
                     audio.play();
@@ -942,6 +1019,15 @@
                     }
                 } else {
                     console.error('Could not extract YouTube video ID from:', currentTrack.path);
+                }
+            } else if (isDeezerUrl(currentTrack.path)) {
+                // Preview de Deezer usando reproductor principal
+                if (audio.paused) {
+                    audio.play();
+                    isPlaying = true;
+                } else {
+                    audio.pause();
+                    isPlaying = false;
                 }
             } else {
                 // Archivo local
@@ -986,6 +1072,31 @@
                 currentTrackIndex = -1;
             }
         });
+
+        // Function to go to next track automatically
+        async function nextTrack() {
+            console.log('Auto-advancing to next track');
+            await fetch(`${API_BASE}/next`, { method: 'POST' });
+            await loadCurrentTrack();
+            loadPlaylist();
+            
+            // Auto-play the next track if it exists
+            if (currentTrack) {
+                if (isYouTubeUrl(currentTrack.path)) {
+                    const videoId = extractYouTubeVideoId(currentTrack.path);
+                    if (videoId) {
+                        playYouTubeVideo(videoId);
+                    }
+                } else if (isDeezerUrl(currentTrack.path)) {
+                    playDeezerPreview();
+                } else {
+                    audio.load();
+                    audio.play();
+                    isPlaying = true;
+                    updatePlayPauseIcon();
+                }
+            }
+        }
 
         // Update progress and time
         audio.addEventListener('timeupdate', () => {
@@ -1179,108 +1290,120 @@
             console.log('Audio can play');
         });
 
-        // YouTube Integration Functions
-        document.getElementById('youtubeBtn').addEventListener('click', () => {
-            document.getElementById('youtubeModal').classList.remove('hidden');
+        // Deezer Integration Functions
+        document.getElementById('deezerBtn').addEventListener('click', () => {
+            document.getElementById('deezerModal').classList.remove('hidden');
         });
 
-        document.getElementById('closeYoutubeModal').addEventListener('click', () => {
-            document.getElementById('youtubeModal').classList.add('hidden');
+        document.getElementById('closeDeezerModal').addEventListener('click', () => {
+            document.getElementById('deezerModal').classList.add('hidden');
         });
 
         // Close modal when clicking outside
-        document.getElementById('youtubeModal').addEventListener('click', (e) => {
-            if (e.target.id === 'youtubeModal') {
-                document.getElementById('youtubeModal').classList.add('hidden');
+        document.getElementById('deezerModal').addEventListener('click', (e) => {
+            if (e.target.id === 'deezerModal') {
+                document.getElementById('deezerModal').classList.add('hidden');
             }
         });
 
-        // YouTube search functionality
+        // Deezer search functionality
         let searchTimeout;
-        document.getElementById('youtubeSearchInput').addEventListener('input', (e) => {
+        document.getElementById('deezerSearchInput').addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             const query = e.target.value.trim();
             
             if (query.length > 2) {
                 searchTimeout = setTimeout(() => {
-                    searchYouTube(query);
+                    searchDeezer(query);
                 }, 500);
             } else {
-                document.getElementById('youtubeResults').innerHTML = '';
+                document.getElementById('deezerResults').innerHTML = '';
             }
         });
 
-        // Add YouTube URL directly
-        document.getElementById('addYoutubeUrl').addEventListener('click', async () => {
-            const url = document.getElementById('youtubeUrlInput').value.trim();
-            if (!url) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/youtube/add_url`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.getElementById('youtubeUrlInput').value = '';
-                    document.getElementById('youtubeModal').classList.add('hidden');
-                    loadPlaylist();
-                    alert('¡Video de YouTube añadido a la playlist!');
-                } else {
-                    alert('Error: ' + (result.error || 'No se pudo añadir el video'));
+        // Enter key search
+        document.getElementById('deezerSearchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = e.target.value.trim();
+                if (query.length > 0) {
+                    searchDeezer(query);
                 }
-            } catch (error) {
-                alert('Error de conexión: ' + error.message);
             }
         });
 
-        async function searchYouTube(query) {
-            const resultsContainer = document.getElementById('youtubeResults');
+        // Deezer functionality doesn't require URL input - search only
+
+        function searchDeezer(query) {
+            const resultsContainer = document.getElementById('deezerResults');
             
             // Mostrar indicador de carga
             resultsContainer.innerHTML = `
                 <div class="text-center text-white/60 py-8">
                     <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
-                    <p>Buscando en YouTube...</p>
+                    <p>Buscando música en internet...</p>
                 </div>
             `;
             
-            try {
-                const response = await fetch(`${API_BASE}/youtube/search?q=${encodeURIComponent(query)}&max_results=8`);
-                
-                if (!response.ok) {
-                    throw new Error(`Error HTTP ${response.status}`);
+            if (!query.trim()) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center text-white/60 py-8">
+                        <i class="fas fa-search text-3xl mb-2"></i>
+                        <p>Escribe algo para buscar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Limpiar scripts anteriores
+            const oldScripts = document.querySelectorAll('script[data-deezer-search]');
+            oldScripts.forEach(script => script.remove());
+            
+            // Crear callback único
+            const callbackName = 'deezerCallback_' + Date.now();
+            
+            // Definir callback global
+            window[callbackName] = function(data) {
+                try {
+                    displayDeezerResults(data);
+                    // Limpiar callback después de usar
+                    delete window[callbackName];
+                } catch (error) {
+                    console.error('Deezer callback error:', error);
+                    resultsContainer.innerHTML = `
+                        <div class="text-center text-white/60 py-8">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-2 text-red-400"></i>
+                            <p class="text-red-400">Error procesando resultados</p>
+                        </div>
+                    `;
                 }
-                
-                const results = await response.json();
-                
-                // Verificar si results es un array
-                if (!Array.isArray(results)) {
-                    throw new Error('Respuesta inválida del servidor');
-                }
-                
-                displayYouTubeResults(results);
-            } catch (error) {
-                console.error('YouTube search error:', error);
+            };
+            
+            // Crear script JSONP
+            const script = document.createElement('script');
+            script.setAttribute('data-deezer-search', 'true');
+            script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=10&output=jsonp&callback=${callbackName}`;
+            
+            // Manejar errores de carga
+            script.onerror = function() {
                 resultsContainer.innerHTML = `
                     <div class="text-center text-white/60 py-8">
                         <i class="fas fa-exclamation-triangle text-3xl mb-2 text-red-400"></i>
-                        <p class="text-red-400">Error en la búsqueda</p>
-                        <p class="text-sm mt-1">${error.message}</p>
+                        <p class="text-red-400">Error conectando con Deezer</p>
+                        <p class="text-sm mt-1">Verifica tu conexión a internet</p>
                     </div>
                 `;
-                showNotification('❌ Error en búsqueda de YouTube: ' + error.message, 'error');
-            }
+                showNotification('❌ Error en búsqueda de música', 'error');
+                delete window[callbackName];
+            };
+            
+            document.body.appendChild(script);
         }
 
-        function displayYouTubeResults(results) {
-            const resultsContainer = document.getElementById('youtubeResults');
+        function displayDeezerResults(data) {
+            const resultsContainer = document.getElementById('deezerResults');
             resultsContainer.innerHTML = '';
 
-            if (results.length === 0) {
+            if (!data.data || data.data.length === 0) {
                 resultsContainer.innerHTML = `
                     <div class="text-center text-white/60 py-8">
                         <i class="fas fa-search text-3xl mb-2"></i>
@@ -1290,37 +1413,61 @@
                 return;
             }
 
-            results.forEach((video, index) => {
+            data.data.forEach((track, index) => {
                 const div = document.createElement('div');
-                div.className = 'youtube-result-card rounded-2xl p-5 mb-4';
+                div.className = 'deezer-result-card rounded-2xl p-5 mb-4';
                 
-                const duration = formatDuration(video.duration);
+                const duration = formatDuration(track.duration);
                 
                 div.innerHTML = `
                     <div class="flex items-start gap-4">
-                        <div class="w-24 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden shadow-lg">
-                            ${video.thumbnail ? 
-                                `<img src="${video.thumbnail}" alt="Thumbnail" class="w-full h-full object-cover rounded-xl">` :
-                                '<i class="fab fa-youtube text-white text-xl"></i>'
+                        <div class="w-24 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden shadow-lg">
+                            ${track.album.cover_medium ? 
+                                `<img src="${track.album.cover_medium}" alt="Album Cover" class="w-full h-full object-cover rounded-xl">` :
+                                '<i class="fas fa-music text-white text-xl"></i>'
                             }
                             <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                                 <i class="fas fa-play text-white text-lg"></i>
                             </div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="text-white font-semibold text-base truncate mb-2 leading-tight">${video.title}</h4>
-                            <div class="flex items-center gap-2 mb-3">
-                                <p class="text-white/70 text-sm">${video.uploader}</p>
+                            <h4 class="text-white font-semibold text-base truncate mb-1 leading-tight">${track.title}</h4>
+                            <div class="flex items-center gap-2 mb-2">
+                                <p class="text-white/70 text-sm">${track.artist.name}</p>
                                 <span class="text-white/40">•</span>
-                                <p class="text-white/50 text-sm">${duration}</p>
+                                <p class="text-white/50 text-sm">${track.album.title}</p>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <button class="download-btn youtube-btn bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl text-white text-sm font-medium shadow-lg" data-url="${video.url}" data-title="${video.title}" data-uploader="${video.uploader}">
-                                    <i class="fas fa-download mr-2"></i>Descargar
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="text-white/50 text-xs">⏱️ ${duration}</span>
+                                <span class="text-white/40">•</span>
+                                <span class="text-white/50 text-xs">🎵 ${track.rank ? track.rank.toLocaleString() : 'N/A'} reproducciones</span>
+                            </div>
+                            
+                            <!-- Botones de acción -->
+                            <div class="flex flex-wrap items-center gap-2 mb-3">
+                                <button class="add-to-player-btn bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg text-white text-xs font-medium shadow-lg" data-preview="${track.preview}" data-title="${track.title}" data-artist="${track.artist.name}" data-album="${track.album.title}" data-cover="${track.album.cover_medium || ''}" data-duration="${track.duration}">
+                                    <i class="fas fa-plus mr-1"></i>Agregar al Reproductor
                                 </button>
-                                <button class="add-url-btn youtube-btn bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-white text-sm font-medium shadow-lg" data-url="${video.url}" data-title="${video.title}" data-uploader="${video.uploader}">
-                                    <i class="fas fa-plus mr-2"></i>Añadir
+                                <button class="play-preview-btn bg-orange-600 hover:bg-orange-700 px-3 py-1.5 rounded-lg text-white text-xs font-medium shadow-lg" data-preview="${track.preview}" data-title="${track.title}" data-artist="${track.artist.name}">
+                                    <i class="fas fa-play mr-1"></i>Preview
                                 </button>
+                                <button class="copy-info-btn bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg text-white text-xs font-medium shadow-lg" data-title="${track.title}" data-artist="${track.artist.name}">
+                                    <i class="fas fa-copy mr-1"></i>Copiar Info
+                                </button>
+                                <a href="${track.link}" target="_blank" class="bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-white text-xs font-medium shadow-lg text-decoration-none inline-block">
+                                    <i class="fab fa-deezer mr-1"></i>Abrir en Deezer
+                                </a>
+                                <button class="search-elsewhere-btn bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-lg text-white text-xs font-medium shadow-lg" data-title="${track.title}" data-artist="${track.artist.name}">
+                                    <i class="fas fa-search mr-1"></i>Buscar en Google
+                                </button>
+                            </div>
+                            
+                            <!-- Audio Preview -->
+                            <div class="preview-audio-container hidden">
+                                <audio controls class="w-full h-8" style="height: 32px;">
+                                    <source src="${track.preview}" type="audio/mpeg">
+                                    Tu navegador no soporta audio HTML5.
+                                </audio>
                             </div>
                         </div>
                     </div>
@@ -1329,32 +1476,139 @@
                 resultsContainer.appendChild(div);
             });
 
-            // Agregar event listeners después de que todos los elementos estén en el DOM
+            // Agregar event listeners para los botones de preview
             setTimeout(() => {
-                const downloadBtns = resultsContainer.querySelectorAll('.download-btn');
-                const addUrlBtns = resultsContainer.querySelectorAll('.add-url-btn');
+                const previewBtns = resultsContainer.querySelectorAll('.play-preview-btn');
 
-                downloadBtns.forEach(btn => {
+                previewBtns.forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const url = btn.getAttribute('data-url');
+                        
+                        const previewUrl = btn.getAttribute('data-preview');
                         const title = btn.getAttribute('data-title');
-                        const uploader = btn.getAttribute('data-uploader');
-                        console.log('Download clicked:', url);
-                        downloadFromYouTube(url, btn, title, uploader);
+                        const artist = btn.getAttribute('data-artist');
+                        
+                        // Encontrar el contenedor de audio en la misma tarjeta
+                        const card = btn.closest('.deezer-result-card');
+                        const audioContainer = card.querySelector('.preview-audio-container');
+                        const audio = audioContainer.querySelector('audio');
+                        
+                        if (audioContainer.classList.contains('hidden')) {
+                            // Mostrar y reproducir
+                            audioContainer.classList.remove('hidden');
+                            audio.play();
+                            btn.innerHTML = '<i class="fas fa-pause mr-2"></i>Pausar';
+                            showNotification(`🎵 Reproduciendo: ${title} - ${artist}`, 'success');
+                        } else {
+                            // Ocultar y pausar
+                            audioContainer.classList.add('hidden');
+                            audio.pause();
+                            audio.currentTime = 0;
+                            btn.innerHTML = '<i class="fas fa-play mr-1"></i>Preview';
+                        }
                     });
                 });
 
-                addUrlBtns.forEach(btn => {
+                // Event listeners para botones de copiar información
+                const copyBtns = resultsContainer.querySelectorAll('.copy-info-btn');
+                copyBtns.forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const url = btn.getAttribute('data-url');
+                        
                         const title = btn.getAttribute('data-title');
-                        const uploader = btn.getAttribute('data-uploader');
-                        console.log('Add URL clicked:', url);
-                        addYouTubeUrl(url, btn, title, uploader);
+                        const artist = btn.getAttribute('data-artist');
+                        const songInfo = `${title} - ${artist}`;
+                        
+                        // Copiar al portapapeles
+                        navigator.clipboard.writeText(songInfo).then(() => {
+                            const originalText = btn.innerHTML;
+                            btn.innerHTML = '<i class="fas fa-check mr-1"></i>¡Copiado!';
+                            btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                            btn.classList.add('bg-green-800');
+                            
+                            setTimeout(() => {
+                                btn.innerHTML = originalText;
+                                btn.classList.remove('bg-green-800');
+                                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                            }, 2000);
+                            
+                            showNotification(`📋 Copiado: ${songInfo}`, 'success');
+                        }).catch(() => {
+                            showNotification('❌ Error al copiar al portapapeles', 'error');
+                        });
+                    });
+                });
+
+                // Event listeners para botones de búsqueda en Google
+                const searchBtns = resultsContainer.querySelectorAll('.search-elsewhere-btn');
+                searchBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const title = btn.getAttribute('data-title');
+                        const artist = btn.getAttribute('data-artist');
+                        const searchQuery = encodeURIComponent(`${title} ${artist} mp3 download`);
+                        const googleUrl = `https://www.google.com/search?q=${searchQuery}`;
+                        
+                        window.open(googleUrl, '_blank');
+                        showNotification(`🔍 Buscando: ${title} - ${artist}`, 'info');
+                    });
+                });
+
+                // Event listeners para botones de agregar al reproductor
+                const addToPlayerBtns = resultsContainer.querySelectorAll('.add-to-player-btn');
+                addToPlayerBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const title = btn.getAttribute('data-title');
+                        const artist = btn.getAttribute('data-artist');
+                        const album = btn.getAttribute('data-album');
+                        const preview = btn.getAttribute('data-preview');
+                        const cover = btn.getAttribute('data-cover');
+                        const duration = parseInt(btn.getAttribute('data-duration'));
+                        
+                        // Crear objeto de canción para la playlist con datos completos de Deezer
+                        const song = {
+                            title: title,
+                            artist: artist,
+                            album: album,
+                            url: `deezer:${JSON.stringify({
+                                title: title,
+                                artist: artist,
+                                album: album,
+                                preview: preview,
+                                cover: cover,
+                                duration: duration
+                            })}`,
+                            cover: cover,
+                            duration: duration,
+                            source: 'deezer',
+                            type: 'preview'
+                        };
+                        
+                        // Agregar a la playlist
+                        addSongToPlaylist(song);
+                        
+                        // Feedback visual
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-check mr-1"></i>¡Agregado!';
+                        btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                        btn.classList.add('bg-green-600');
+                        btn.disabled = true;
+                        
+                        setTimeout(() => {
+                            btn.innerHTML = originalText;
+                            btn.classList.remove('bg-green-600');
+                            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                            btn.disabled = false;
+                        }, 2000);
+                        
+                        showNotification(`🎵 Agregado al reproductor: ${title} - ${artist}`, 'success');
                     });
                 });
             }, 100);
@@ -1649,6 +1903,10 @@
             return url && (url.includes('youtube.com') || url.includes('youtu.be'));
         }
 
+        function isDeezerUrl(url) {
+            return url && (url.includes('dzcdn.net') || url.startsWith('deezer:'));
+        }
+
         function playYouTubeVideo(videoId) {
             console.log('Attempting to play YouTube video:', videoId);
 
@@ -1749,39 +2007,208 @@
             }
         }
 
-        // Test YouTube button
-        document.getElementById('testYouTubeBtn').addEventListener('click', async () => {
-            console.log('Testing YouTube integration...');
-            
-            try {
-                // Probar la API del backend primero
-                const response = await fetch(`${API_BASE}/youtube/test`);
-                const result = await response.json();
+        // YouTube test functionality removed - using Deezer instead
+
+        // Deezer Player Functions
+        // Variables de deezerPlayer eliminadas - ahora usa el reproductor principal
+
+        function setupDeezerPlayer(deezerPath) {
+            console.log('Setting up Deezer player for:', deezerPath);
+
+            // Si es un identificador deezer:, usar datos almacenados
+            if (deezerPath.startsWith('deezer:')) {
+                const jsonData = deezerPath.substring(7); // Remover "deezer:"
                 
-                console.log('Backend test result:', result);
-                
-                if (result.success) {
-                    showNotification(`✅ Backend OK - API Key: ${result.api_key_configured ? 'Configurada' : 'No configurada'}`, 'success');
+                try {
+                    // Intentar parsear como JSON (nuevo formato)
+                    const trackData = JSON.parse(jsonData);
+                    console.log('Using stored Deezer track data:', trackData);
                     
-                    // Probar el player si está listo
-                    if (isYouTubePlayerReady && youtubePlayer) {
-                        console.log('Testing YouTube player...');
-                        const testVideoId = 'dQw4w9WgXcQ'; // Rick Roll
-                        console.log('Testing with video ID:', testVideoId);
-                        playYouTubeVideo(testVideoId);
-                        showNotification('🎵 Probando reproducción de YouTube', 'info');
+                    // Usar la URL de preview almacenada directamente en el reproductor principal
+                    if (trackData.preview) {
+                        audio.crossOrigin = 'anonymous'; // Necesario para URLs externas
+                        audio.src = trackData.preview;
+                        audio.load();
+                        console.log('Deezer preview loaded in main player:', trackData.preview);
+                        
+                        // Si se debe reproducir automáticamente
+                        if (shouldAutoplayDeezer) {
+                            shouldAutoplayDeezer = false; // Resetear el flag
+                            
+                            // Esperar a que el audio esté listo y reproducir
+                            const playWhenReady = () => {
+                                audio.play().then(() => {
+                                    isPlaying = true;
+                                    updatePlayPauseIcon();
+                                    showNotification(`🎵 Reproduciendo: ${trackData.title} - ${trackData.artist}`, 'success');
+                                    console.log('Deezer track playing automatically from stored data');
+                                }).catch(error => {
+                                    console.error('Error playing Deezer preview:', error);
+                                    showNotification('❌ Error al reproducir preview', 'error');
+                                });
+                            };
+                            
+                            // Si el audio ya puede reproducirse, reproducir inmediatamente
+                            if (audio.readyState >= 3) {
+                                playWhenReady();
+                            } else {
+                                // Esperar a que el audio esté listo
+                                audio.addEventListener('canplay', playWhenReady, { once: true });
+                            }
+                        }
                     } else {
-                        showNotification('⚠️ Player no está listo, pero backend funciona', 'warning');
+                        console.error('No preview URL in stored data');
+                        showNotification('❌ No hay preview disponible para esta canción', 'error');
                     }
-                } else {
-                    showNotification(`❌ Error en backend: ${result.error}`, 'error');
+                } catch (e) {
+                    // Si no es JSON, es el formato antiguo (solo texto)
+                    console.log('Using legacy format, searching dynamically:', jsonData);
+                    searchAndPlayDeezerInMainPlayer(jsonData);
+                }
+            } else {
+                console.error('URL de Deezer no válida o formato antiguo:', deezerPath);
+                showNotification('❌ Formato de Deezer no válido. Agrega la canción nuevamente.', 'error');
+            }
+        }
+
+        // Funciones de Deezer eliminadas - ahora usa el reproductor principal
+
+        // Función para buscar y reproducir dinámicamente usando JSONP (para el reproductor principal)
+        function searchAndPlayDeezerInMainPlayer(query) {
+            console.log('Searching Deezer for main player:', query);
+            
+            // Crear un callback único para evitar conflictos
+            const callbackName = 'deezerCallback_' + Date.now();
+            
+            // Definir el callback globalmente
+            window[callbackName] = function(data) {
+                // Limpiar el script y callback
+                const script = document.getElementById('deezer-search-script');
+                if (script) script.remove();
+                delete window[callbackName];
+                
+                if (!data.data || data.data.length === 0) {
+                    console.error('No se encontró la canción en Deezer');
+                    showNotification('❌ No se encontró la canción en Deezer', 'error');
+                    return;
                 }
                 
-            } catch (error) {
-                console.error('Test error:', error);
-                showNotification(`❌ Error de conexión: ${error.message}`, 'error');
-            }
-        });
+                const track = data.data[0];
+                console.log('Found Deezer track for main player:', track);
+                
+                if (track.preview) {
+                    // Configurar el reproductor principal con la URL fresca
+                    audio.crossOrigin = 'anonymous';
+                    audio.src = track.preview;
+                    audio.load();
+                    console.log('Deezer preview loaded in main player:', track.preview);
+                    
+                    // Si se debe reproducir automáticamente
+                    if (shouldAutoplayDeezer) {
+                        shouldAutoplayDeezer = false; // Resetear el flag
+                        
+                        // Esperar a que el audio esté listo y reproducir
+                        const playWhenReady = () => {
+                            audio.play().then(() => {
+                                isPlaying = true;
+                                updatePlayPauseIcon();
+                                showNotification(`🎵 Reproduciendo: ${track.title} - ${track.artist.name}`, 'success');
+                                console.log('Deezer track playing automatically');
+                            }).catch(error => {
+                                console.error('Error playing Deezer preview:', error);
+                                showNotification('❌ Error al reproducir preview', 'error');
+                            });
+                        };
+                        
+                        // Si el audio ya puede reproducirse, reproducir inmediatamente
+                        if (audio.readyState >= 3) {
+                            playWhenReady();
+                        } else {
+                            // Esperar a que el audio esté listo
+                            audio.addEventListener('canplay', playWhenReady, { once: true });
+                        }
+                    }
+                } else {
+                    console.error('No preview available for this track');
+                    showNotification('❌ No hay preview disponible para esta canción', 'error');
+                }
+            };
+            
+            // Crear y ejecutar el script JSONP
+            const script = document.createElement('script');
+            script.id = 'deezer-search-script';
+            script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=1&output=jsonp&callback=${callbackName}`;
+            
+            // Manejar errores de carga
+            script.onerror = function() {
+                console.error('Error loading Deezer search script');
+                showNotification('❌ Error al buscar en Deezer', 'error');
+                delete window[callbackName];
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        // Función para buscar y reproducir dinámicamente usando JSONP (legacy - para deezerPlayer separado)
+        function searchAndPlayDeezer(query) {
+            console.log('Searching Deezer for:', query);
+            
+            // Crear un callback único para evitar conflictos
+            const callbackName = 'deezerCallback_' + Date.now();
+            
+            // Definir el callback globalmente
+            window[callbackName] = function(data) {
+                // Limpiar el script y callback
+                const script = document.getElementById('deezer-search-script');
+                if (script) script.remove();
+                delete window[callbackName];
+                
+                if (!data.data || data.data.length === 0) {
+                    console.error('No se encontró la canción en Deezer');
+                    showNotification('❌ No se encontró la canción en Deezer', 'error');
+                    return;
+                }
+                
+                const track = data.data[0];
+                console.log('Found Deezer track:', track);
+                
+                if (track.preview) {
+                    // Pausar el reproductor principal antes de configurar Deezer
+                    if (audioPlayer && !audioPlayer.paused) {
+                        audioPlayer.pause();
+                    }
+                    
+                    // Configurar el reproductor con la URL fresca
+                    deezerPlayer.src = track.preview;
+                    deezerPlayer.load();
+                    console.log('Deezer preview loaded:', track.preview);
+                    
+                    // Intentar reproducir automáticamente
+                    setTimeout(() => {
+                        deezerPlayer.play().catch(e => {
+                            console.log('Autoplay prevented, user interaction required');
+                        });
+                    }, 100);
+                } else {
+                    console.error('No preview available for this track');
+                    showNotification('❌ No hay preview disponible para esta canción', 'error');
+                }
+            };
+            
+            // Crear y ejecutar el script JSONP
+            const script = document.createElement('script');
+            script.id = 'deezer-search-script';
+            script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=1&output=jsonp&callback=${callbackName}`;
+            
+            // Manejar errores de carga
+            script.onerror = function() {
+                console.error('Error loading Deezer search script');
+                showNotification('❌ Error al buscar en Deezer', 'error');
+                delete window[callbackName];
+            };
+            
+            document.head.appendChild(script);
+        }
 
         // Verificar periódicamente si YouTube API está lista
         function checkYouTubeAPI() {
