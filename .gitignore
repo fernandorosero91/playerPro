@@ -4,6 +4,9 @@ uploads/
 # Archivos descargados de YouTube
 downloads/
 
+# Archivos de sesión
+sessions/
+
 # Archivo de playlist (contiene datos temporales)
 playlist.pkl
 
