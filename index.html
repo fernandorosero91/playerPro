@@ -624,6 +624,13 @@
         const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
             ? 'http://localhost:5000' 
             : `${window.location.protocol}//${window.location.host}`;
+        
+        // Debug: Log environment info
+        console.log('🔧 DEBUG INFO:');
+        console.log('Current hostname:', window.location.hostname);
+        console.log('Current protocol:', window.location.protocol);
+        console.log('Current host:', window.location.host);
+        console.log('API_BASE configured as:', API_BASE);
         const audio = document.getElementById('audioPlayer');
         let currentTrack = null;
         let isPlaying = false;
