@@ -11,8 +11,6 @@ services:
         generateValue: true
       - key: FLASK_ENV
         value: production
-      - key: PORT
-        value: 8080
     healthCheckPath: /health
     autoDeploy: true
     disk:

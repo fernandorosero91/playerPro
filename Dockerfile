@@ -27,12 +27,12 @@ COPY . .
 RUN mkdir -p uploads downloads sessions static \
     && chmod 755 uploads downloads sessions static
 
-# Expose port (use default 8080 for Render)
-EXPOSE 8080
+# Expose port (Render will set PORT env var)
+EXPOSE $PORT
 
-# Health check with simpler command
+# Health check with dynamic port
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=2 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:$PORT/health || exit 1
 
-# Start command
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "120", "--worker-class", "sync", "backend:app"]
+# Start command with dynamic port
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --worker-class sync backend:app"]
